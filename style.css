@@ -1151,3 +1151,36 @@ p  { color: var(--ink2); line-height: 1.65; }
   flex-shrink: 0;
 }
 .cw__wa-link:hover { color: var(--wa-h); background: #F0FAF4; }
+
+/* FIX: Chat widget mobile position */
+@media (max-width: 640px) {
+  .cw {
+    left: 0;
+    right: 0;
+    bottom: 1rem;
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 1rem;
+    pointer-events: none;
+  }
+
+  .cw__btn {
+    pointer-events: all;
+  }
+
+  .cw__box {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    bottom: 5.5rem;
+    width: auto;
+    max-width: none;
+    max-height: calc(100vh - 7rem);
+    border-radius: 20px;
+    pointer-events: none;
+  }
+
+  .cw.open .cw__box {
+    pointer-events: all;
+  }
+}
