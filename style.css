@@ -921,8 +921,15 @@ p  { color: var(--ink2); line-height: 1.65; }
   .ft__top { grid-template-columns: 1fr; gap: 2rem; }
   .ft__brand { grid-column: auto; }
 
-  /* Chat widget — full width popup */
-  .cw__box { right: 0; left: 0; width: auto; border-radius: 20px 20px 0 0; bottom: 68px; }
+  /* Chat widget — фиксированный к экрану на мобиле */
+  .cw__box {
+    position: fixed;
+    bottom: 76px;
+    left: 0.75rem;
+    right: 0.75rem;
+    width: auto;
+    border-radius: 20px;
+  }
   .cw { right: 1rem; }
 }
 
