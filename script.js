@@ -192,11 +192,40 @@
     console.log('Телефон:',   answers.phone || '—');
     console.log('Связь:',     answers.contact || '—');
 
-    fetch('https://script.google.com/macros/s/AKfycbx8o1B7hfUxYt9RkklO-Grwz19sfx836n0xRa0r75z4qw-MwhcSrcePwMc61kISSaQpHQ/exec', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(answers)
-    }).catch(function(){});
+    var GAS_URL = 'https://script.google.com/macros/s/AKfycbx8o1B7hfUxYt9RkklO-Grwz19sfx836n0xRa0r75z4qw-MwhcSrcePwMc61kISSaQpHQ/exec';
+
+    /* Отправка через скрытый iframe — без CORS */
+    var iframeId = 'gas_iframe';
+    if (!document.getElementById(iframeId)) {
+      var iframe = document.createElement('iframe');
+      iframe.name = iframeId;
+      iframe.id   = iframeId;
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+    }
+
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = GAS_URL;
+    form.target = iframeId;
+    form.style.display = 'none';
+
+    var fields = {
+      q1: answers.q1, q2: answers.q2, q3: answers.q3,
+      q4: answers.q4, q5: answers.q5,
+      name: answers.name, phone: answers.phone, contact: answers.contact
+    };
+    Object.keys(fields).forEach(function(key) {
+      var inp = document.createElement('input');
+      inp.type  = 'hidden';
+      inp.name  = key;
+      inp.value = fields[key] || '';
+      form.appendChild(inp);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+    setTimeout(function() { document.body.removeChild(form); }, 2000);
 
     document.querySelectorAll('.qslide').forEach(function (el) {
       el.classList.remove('active');
