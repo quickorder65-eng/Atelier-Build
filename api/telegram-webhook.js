@@ -1,40 +1,40 @@
-// POST /api/telegram-webhook
-// Receives Telegram messages → sends to Gemini → replies back
-// This is the demo/imitation of a future WhatsApp AI assistant
-//
-// To connect:
-//   curl -X POST "https://api.telegram.org/bot<TOKEN>/setWebhook" \
-//        -H "Content-Type: application/json" \
-//        -d '{"url":"https://your-domain.vercel.app/api/telegram-webhook"}'
-
 async function askGemini(userText) {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return null;
-
-  const SYSTEM = `Ты ИИ-ассистент ремонтной компании Atelier Buils (Алматы).
-Отвечай кратко и по делу. Помогай клиентам с вопросами о ремонте.
-Цены: базовый от 35 000 ₸/м², комфорт от 55 000 ₸/м², премиум от 90 000 ₸/м².
-Предлагай оставить заявку или позвонить +7 700 123-45-67.`;
-
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: SYSTEM }] },
-          contents: [{ role: 'user', parts: [{ text: userText }] }],
-          generationConfig: { maxOutputTokens: 256, temperature: 0.7 }
-        })
-      }
-    );
-    const data = await res.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
-  } catch (e) {
-    console.error('[TG Webhook Gemini]', e.message);
+  if (!apiKey) {
+    console.log('[TG Webhook] GEMINI_API_KEY not set');
     return null;
   }
+
+  const contents = [
+    {
+      role: 'user',
+      parts: [{ text: '[ИНСТРУКЦИЯ]: Ты ИИ-ассистент ремонтной компании Atelier Buils (Алматы). Отвечай кратко — 2-3 предложения. Цены: базовый от 35 000 ₸/м², комфорт от 55 000 ₸/м², премиум от 90 000 ₸/м². Предлагай оставить заявку или позвонить +7 700 123-45-67.' }]
+    },
+    { role: 'model', parts: [{ text: 'Понял.' }] },
+    { role: 'user', parts: [{ text: userText }] }
+  ];
+
+  const models = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-pro'];
+
+  for (const model of models) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents, generationConfig: { maxOutputTokens: 300, temperature: 0.7 } })
+        }
+      );
+      const data = await res.json();
+      if (data.error) { console.error('[TG Gemini]', model, data.error.message); continue; }
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) return text;
+    } catch (e) {
+      console.error('[TG Gemini] fetch error:', e.message);
+    }
+  }
+  return null;
 }
 
 async function telegramReply(chatId, text) {
@@ -52,16 +52,16 @@ module.exports = async function handler(req, res) {
 
   const update = req.body;
   const msg = update?.message;
-  if (!msg) return res.status(200).end();
+  if (!msg) return res.status(200).json({ ok: true });
 
   const chatId = msg.chat?.id;
   const userText = msg.text || '';
+  if (!userText || !chatId) return res.status(200).json({ ok: true });
 
-  if (!userText) return res.status(200).json({ ok: true });
+  console.log('[TG Webhook] message from', chatId, ':', userText);
 
   const aiReply = await askGemini(userText);
-  const reply = aiReply ||
-    'Здравствуйте! Я помогу с вопросами о ремонте. Позвоните нам: +7 700 123-45-67 или оставьте заявку на сайте.';
+  const reply = aiReply || 'Здравствуйте! Напишите нам в WhatsApp или позвоните: +7 700 123-45-67. Мы поможем с вопросами о ремонте.';
 
   await telegramReply(chatId, reply);
   return res.status(200).json({ ok: true });
