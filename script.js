@@ -200,10 +200,16 @@
         var nameEl  = document.getElementById('qName');
         var phoneEl = document.getElementById('qPhone');
         answers.name    = nameEl  ? nameEl.value.trim()  : '';
-        answers.phone   = phoneEl ? phoneEl.value.trim() : '';
+        answers.phone   = phoneEl ? phoneEl.value.replace(/\D/g, '') : '';
         answers.contact = answers['q6'] || '';
         submitQuiz();
       } else {
+        var curSlide = document.querySelector('.qslide[data-step="' + step + '"]');
+        if (curSlide && curSlide.querySelector('.qopt') && !curSlide.querySelector('.qopt.sel')) {
+          curSlide.querySelector('.qopts').classList.add('shake');
+          setTimeout(function () { curSlide.querySelector('.qopts').classList.remove('shake'); }, 500);
+          return;
+        }
         step = Math.min(step + 1, STEPS);
         showStep(step);
       }
