@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Environment secrets — НИКОГДА не коммитить!
+.env
+.env.local
+.env.production
+
+# Vercel
+.vercel/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini

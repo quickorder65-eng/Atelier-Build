@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRM — Atelier Buils</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#F3F0EA; --bg2:#ECEAE3; --white:#FFFFFF; --ink:#141414;
+      --ink2:#5F5F5A; --line:#D8D0C4; --dark:#1C1C1A; --acc:#9A7A45;
+      --fh:'Inter Tight','Inter',Arial,sans-serif; --fb:'Inter',Arial,sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--ink);font-family:var(--fb);font-size:.95rem;line-height:1.6;-webkit-font-smoothing:antialiased}
+    a{color:inherit;text-decoration:none}
+    button{cursor:pointer;font:inherit;border:none;background:none}
+
+    /* Login */
+    .login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1.5rem}
+    .login__box{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:2.5rem;max-width:360px;width:100%;text-align:center}
+    .login__logo{font-family:var(--fh);font-size:1.4rem;font-weight:800;margin-bottom:.5rem}
+    .login__logo span{background:var(--ink);color:#fff;display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;font-size:.9rem;margin-right:.4rem;vertical-align:middle}
+    .login__sub{color:var(--ink2);font-size:.85rem;margin-bottom:2rem}
+    .login__inp{width:100%;border:1.5px solid var(--line);border-radius:8px;padding:.75rem 1rem;font:inherit;font-size:.95rem;outline:none;transition:border-color .2s;margin-bottom:.2rem}
+    .login__inp:focus{border-color:var(--ink)}
+    .login__inp.err{border-color:#c0392b}
+    .login__err{color:#c0392b;font-size:.8rem;margin-bottom:.8rem;min-height:1.2em}
+    .login__btn{width:100%;background:var(--ink);color:#fff;font-family:var(--fh);font-weight:700;font-size:.95rem;padding:.85rem;border-radius:50px;transition:background .2s;margin-top:.5rem}
+    .login__btn:hover{background:#2a2a2a}
+
+    /* Layout */
+    .crm{display:none}
+    .crm.visible{display:flex;flex-direction:column;min-height:100vh}
+    .crm__hdr{background:var(--dark);color:#fff;padding:.9rem 1.5rem;display:flex;align-items:center;gap:1.2rem;position:sticky;top:0;z-index:100}
+    .crm__logo{font-family:var(--fh);font-weight:800;font-size:1.1rem}
+    .crm__logo b{background:var(--acc);color:#fff;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;font-size:.75rem;margin-right:.35rem}
+    .crm__title{font-family:var(--fh);font-weight:700;font-size:.95rem;opacity:.7;margin-left:.2rem}
+    .crm__actions{margin-left:auto;display:flex;align-items:center;gap:.7rem}
+    .crm__followall{background:transparent;border:1.5px solid rgba(255,255,255,.25);color:#fff;font-family:var(--fh);font-size:.8rem;font-weight:700;padding:.4rem .9rem;border-radius:50px;transition:border-color .2s}
+    .crm__followall:hover{border-color:rgba(255,255,255,.6)}
+    .crm__logout{background:transparent;color:rgba(255,255,255,.5);font-size:.8rem;padding:.4rem .6rem;border-radius:4px;transition:color .2s}
+    .crm__logout:hover{color:#fff}
+    .crm__storage-badge{font-size:.72rem;background:rgba(255,255,255,.12);padding:.25rem .6rem;border-radius:20px;opacity:.8}
+
+    /* Main area */
+    .crm__main{display:flex;flex:1;gap:0}
+    .crm__list-col{flex:0 0 380px;border-right:1px solid var(--line);overflow-y:auto;background:var(--white)}
+    .crm__detail-col{flex:1;overflow-y:auto;background:var(--bg);padding:1.8rem}
+
+    /* Filters */
+    .crm__filters{padding:.8rem 1rem;border-bottom:1px solid var(--line);display:flex;gap:.4rem;flex-wrap:wrap}
+    .crm__filter{background:transparent;border:1.5px solid var(--line);border-radius:50px;padding:.3rem .8rem;font-size:.78rem;font-weight:600;color:var(--ink2);transition:all .15s}
+    .crm__filter.active,.crm__filter:hover{border-color:var(--ink);color:var(--ink);background:var(--bg2)}
+
+    /* Lead cards */
+    .lead-card{border-bottom:1px solid var(--bg2);padding:1rem 1.1rem;cursor:pointer;transition:background .15s;position:relative}
+    .lead-card:hover,.lead-card.active{background:var(--bg)}
+    .lead-card__row{display:flex;align-items:center;gap:.5rem;margin-bottom:.2rem}
+    .lead-card__name{font-weight:600;font-size:.9rem;flex:1}
+    .lead-card__phone{color:var(--ink2);font-size:.82rem}
+    .lead-card__type{font-size:.78rem;color:var(--ink2)}
+    .lead-card__meta{display:flex;align-items:center;gap:.5rem;margin-top:.3rem;flex-wrap:wrap}
+    .lead-card__time{font-size:.75rem;color:var(--ink2);opacity:.8}
+
+    /* Status badges */
+    .badge{display:inline-block;font-size:.72rem;font-weight:700;padding:.18rem .55rem;border-radius:20px;letter-spacing:.03em}
+    .badge--new      {background:#FEF3C7;color:#92400E}
+    .badge--work     {background:#D1FAE5;color:#065F46}
+    .badge--noanswer {background:#FEE2E2;color:#991B1B}
+    .badge--call     {background:#DBEAFE;color:#1E40AF}
+    .badge--measure  {background:#EDE9FE;color:#5B21B6}
+    .badge--closed   {background:#F3F4F6;color:#6B7280}
+
+    /* Detail pane */
+    .detail-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:70vh;color:var(--ink2);gap:.5rem}
+    .detail-empty svg{opacity:.25}
+    .detail-card{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:1.6rem;max-width:680px}
+    .detail-card__hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.2rem;gap:1rem;flex-wrap:wrap}
+    .detail-card__name{font-family:var(--fh);font-size:1.3rem;font-weight:800}
+    .detail-card__id{font-size:.75rem;color:var(--ink2);margin-top:.15rem}
+    .detail-card__section{margin-bottom:1.4rem}
+    .detail-card__section-title{font-family:var(--fh);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);margin-bottom:.7rem;padding-bottom:.4rem;border-bottom:1px solid var(--bg2)}
+    .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem .8rem}
+    .detail-row{display:flex;flex-direction:column;gap:.05rem}
+    .detail-row .label{font-size:.75rem;color:var(--ink2)}
+    .detail-row .value{font-weight:500;font-size:.9rem}
+
+    /* Status select */
+    .status-row{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap}
+    .status-select{border:1.5px solid var(--line);border-radius:8px;padding:.5rem .8rem;font:inherit;font-size:.9rem;background:var(--white);cursor:pointer;outline:none;transition:border-color .2s}
+    .status-select:focus{border-color:var(--ink)}
+    .btn-save-status{background:var(--ink);color:#fff;font-family:var(--fh);font-weight:700;font-size:.82rem;padding:.5rem 1rem;border-radius:50px;transition:background .2s}
+    .btn-save-status:hover{background:#2a2a2a}
+    .btn-save-status:disabled{opacity:.4;cursor:not-allowed}
+
+    /* Comment */
+    .comment-area{width:100%;border:1.5px solid var(--line);border-radius:8px;padding:.75rem .9rem;font:inherit;font-size:.9rem;resize:vertical;min-height:80px;outline:none;transition:border-color .2s}
+    .comment-area:focus{border-color:var(--ink)}
+
+    /* Action buttons */
+    .action-btns{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.4rem}
+    .btn-action{display:inline-flex;align-items:center;gap:.4rem;font-family:var(--fh);font-weight:700;font-size:.82rem;padding:.55rem 1rem;border-radius:50px;transition:all .2s;border:1.5px solid}
+    .btn-action--tg{background:transparent;color:#229ED9;border-color:#229ED9}
+    .btn-action--tg:hover{background:#229ED9;color:#fff}
+    .btn-action--cal{background:transparent;color:var(--acc);border-color:var(--acc)}
+    .btn-action--cal:hover{background:var(--acc);color:#fff}
+    .btn-action--fu{background:transparent;color:var(--ink2);border-color:var(--line)}
+    .btn-action--fu:hover{border-color:var(--ink);color:var(--ink)}
+
+    /* Calendar modal */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;padding:1rem}
+    .modal-overlay.open{display:flex}
+    .modal{background:var(--white);border-radius:14px;padding:1.8rem;max-width:380px;width:100%}
+    .modal h3{font-family:var(--fh);font-size:1.1rem;font-weight:800;margin-bottom:1.2rem}
+    .modal-field{margin-bottom:1rem}
+    .modal-field label{display:block;font-size:.8rem;font-weight:600;margin-bottom:.35rem;color:var(--ink2)}
+    .modal-inp{width:100%;border:1.5px solid var(--line);border-radius:8px;padding:.65rem .9rem;font:inherit;font-size:.9rem;outline:none;transition:border-color .2s}
+    .modal-inp:focus{border-color:var(--ink)}
+    .modal-inp.err{border-color:#c0392b}
+    .modal-type{display:flex;gap:.5rem;margin-bottom:1rem}
+    .modal-type button{flex:1;font-family:var(--fh);font-size:.8rem;font-weight:700;padding:.5rem;border-radius:8px;border:1.5px solid var(--line);transition:all .15s}
+    .modal-type button.active{border-color:var(--ink);background:var(--ink);color:#fff}
+    .modal-btns{display:flex;gap:.6rem;margin-top:1.2rem}
+    .btn-modal-ok{flex:1;background:var(--ink);color:#fff;font-family:var(--fh);font-weight:700;font-size:.88rem;padding:.7rem;border-radius:50px;transition:background .2s}
+    .btn-modal-ok:hover{background:#2a2a2a}
+    .btn-modal-cancel{background:transparent;color:var(--ink2);font-size:.85rem;padding:.7rem 1rem;border-radius:50px}
+    .btn-modal-cancel:hover{color:var(--ink)}
+
+    /* Toast */
+    .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--dark);color:#fff;padding:.75rem 1.2rem;border-radius:10px;font-size:.85rem;font-weight:500;z-index:500;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none;max-width:280px}
+    .toast.show{opacity:1;transform:none}
+    .toast.err{background:#c0392b}
+
+    /* Demo banner */
+    .demo-banner{background:#FEF3C7;border-bottom:1px solid #F9D066;padding:.5rem 1.5rem;font-size:.8rem;color:#92400E;text-align:center}
+    .demo-banner a{color:#92400E;font-weight:600;text-decoration:underline}
+
+    /* Empty state */
+    .no-leads{padding:2rem 1rem;text-align:center;color:var(--ink2);font-size:.9rem}
+
+    @media(max-width:700px){
+      .crm__list-col{flex:0 0 100%}
+      .crm__main{flex-direction:column}
+      .crm__detail-col{padding:1rem}
+      .detail-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login" id="loginScreen">
+  <div class="login__box">
+    <div class="login__logo">
+      <span>AB</span>Atelier Buils
+    </div>
+    <p class="login__sub">CRM — заявки и лиды</p>
+    <input type="password" class="login__inp" id="loginPwd" placeholder="Пароль" autocomplete="current-password">
+    <p class="login__err" id="loginErr"></p>
+    <button class="login__btn" id="loginBtn">Войти</button>
+  </div>
+</div>
+
+<!-- CRM -->
+<div class="crm" id="crmApp">
+  <div id="demoBanner" class="demo-banner" style="display:none">
+    ⚠️ Режим <b>mock</b>: заявки хранятся в памяти и сбрасываются при рестарте сервера.
+    Для реального хранилища — настройте <b>GOOGLE_SHEETS_WEBHOOK_URL</b> и переключите <b>CRM_STORAGE_MODE=google_sheets</b>.
+    <a href="/analytics-demo">Аналитика</a> · <a href="/admin/prices">Цены</a>
+  </div>
+
+  <div class="crm__hdr">
+    <div class="crm__logo"><b>AB</b> CRM</div>
+    <span class="crm__title">Заявки</span>
+    <span class="crm__storage-badge" id="storageBadge">mock</span>
+    <div class="crm__actions">
+      <button class="crm__followall" id="btnFollowAll" title="Отправить напоминания по всем просроченным заявкам">⏰ Фоллоу-апы</button>
+      <button class="crm__logout" id="btnLogout">Выйти</button>
+    </div>
+  </div>
+
+  <div class="crm__main">
+    <!-- LEAD LIST -->
+    <div class="crm__list-col">
+      <div class="crm__filters" id="crmFilters">
+        <button class="crm__filter active" data-status="all">Все</button>
+        <button class="crm__filter" data-status="Новая">Новые</button>
+        <button class="crm__filter" data-status="В работе">В работе</button>
+        <button class="crm__filter" data-status="Не ответил">Не отвечает</button>
+        <button class="crm__filter" data-status="Записан на созвон">Созвон</button>
+        <button class="crm__filter" data-status="Записан на замер">Замер</button>
+        <button class="crm__filter" data-status="Закрыта">Закрыта</button>
+      </div>
+      <div id="leadsList"></div>
+    </div>
+
+    <!-- DETAIL PANEL -->
+    <div class="crm__detail-col" id="detailCol">
+      <div class="detail-empty">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+        <span>Выберите заявку</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CALENDAR MODAL -->
+<div class="modal-overlay" id="calModal">
+  <div class="modal">
+    <h3>Запись в календарь</h3>
+    <div class="modal-type">
+      <button data-type="Записан на созвон" class="active" id="calTypeCall">📞 Созвон</button>
+      <button data-type="Записан на замер"  id="calTypeMeasure">📐 Замер</button>
+    </div>
+    <div class="modal-field">
+      <label>Дата</label>
+      <input type="date" class="modal-inp" id="calDate">
+    </div>
+    <div class="modal-field">
+      <label>Время (Алматы)</label>
+      <input type="time" class="modal-inp" id="calTime">
+    </div>
+    <div class="modal-btns">
+      <button class="btn-modal-cancel" id="calCancel">Отмена</button>
+      <button class="btn-modal-ok" id="calConfirm">Создать событие</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var pwd         = '';
+  var allLeads    = [];
+  var activeLead  = null;
+  var filterStatus = 'all';
+  var calLeadId   = null;
+  var calType     = 'Записан на созвон';
+
+  /* ── Auth ─────────────────────────────────────────────── */
+  var loginBtn  = document.getElementById('loginBtn');
+  var loginPwd  = document.getElementById('loginPwd');
+  var loginErr  = document.getElementById('loginErr');
+  var loginScr  = document.getElementById('loginScreen');
+  var crmApp    = document.getElementById('crmApp');
+
+  loginBtn.addEventListener('click', tryLogin);
+  loginPwd.addEventListener('keydown', function(e){ if(e.key==='Enter') tryLogin(); });
+
+  function tryLogin() {
+    var p = loginPwd.value.trim();
+    if (!p) { loginErr.textContent='Введите пароль'; return; }
+    loginErr.textContent = '';
+    loginBtn.disabled = true; loginBtn.textContent = 'Входим…';
+    fetch('/api/leads', { headers: { 'x-admin-password': p } })
+      .then(function(r) {
+        if (r.status === 401) throw new Error('Неверный пароль');
+        if (!r.ok)            throw new Error('Ошибка сервера ' + r.status);
+        return r.json();
+      })
+      .then(function(data) {
+        pwd = p;
+        allLeads = data.leads || [];
+        loginScr.style.display = 'none';
+        crmApp.classList.add('visible');
+        renderAll();
+      })
+      .catch(function(e) {
+        loginErr.textContent = e.message;
+        loginBtn.disabled = false; loginBtn.textContent = 'Войти';
+      });
+  }
+
+  document.getElementById('btnLogout').addEventListener('click', function(){
+    pwd = ''; allLeads = []; activeLead = null;
+    crmApp.classList.remove('visible');
+    loginScr.style.display = '';
+    loginPwd.value = '';
+  });
+
+  /* ── Render ───────────────────────────────────────────── */
+  function renderAll() {
+    renderList();
+    detectMode();
+  }
+
+  function detectMode() {
+    // Check if storage is mock from a separate header or just by presence of demo leads
+    var hasDemoId = allLeads.some(function(l){ return l.id && l.id.startsWith('demo-'); });
+    if (hasDemoId) {
+      document.getElementById('demoBanner').style.display = '';
+      document.getElementById('storageBadge').textContent = 'mock';
+    } else {
+      document.getElementById('storageBadge').textContent = 'live';
+    }
+  }
+
+  function statusBadge(status) {
+    var map = {
+      'Новая':'new','В работе':'work','Не ответил':'noanswer',
+      'Записан на созвон':'call','Записан на замер':'measure','Закрыта':'closed'
+    };
+    return '<span class="badge badge--' + (map[status]||'new') + '">' + escHtml(status) + '</span>';
+  }
+
+  function escHtml(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function timeAgo(iso) {
+    var d = new Date(iso), now = Date.now(), diff = now - d;
+    if (diff < 60000)  return 'только что';
+    if (diff < 3600000) return Math.floor(diff/60000) + ' мин. назад';
+    if (diff < 86400000) return Math.floor(diff/3600000) + ' ч. назад';
+    return Math.floor(diff/86400000) + ' д. назад';
+  }
+
+  function renderList() {
+    var list = document.getElementById('leadsList');
+    var filtered = filterStatus === 'all' ? allLeads : allLeads.filter(function(l){ return l.status === filterStatus; });
+    if (!filtered.length) {
+      list.innerHTML = '<div class="no-leads">Нет заявок</div>';
+      return;
+    }
+    // Sort newest first
+    filtered = filtered.slice().sort(function(a,b){ return new Date(b.createdAt)-new Date(a.createdAt); });
+
+    list.innerHTML = filtered.map(function(lead) {
+      return '<div class="lead-card' + (activeLead&&activeLead.id===lead.id?' active':'') + '" data-id="'+lead.id+'">'
+        + '<div class="lead-card__row"><span class="lead-card__name">'+escHtml(lead.name)+'</span>'
+        + statusBadge(lead.status)+'</div>'
+        + '<div class="lead-card__phone">'+escHtml(lead.phone)+'</div>'
+        + '<div class="lead-card__meta">'
+        + '<span class="lead-card__type">'+escHtml(lead.objectType)+' · '+escHtml(lead.area)+'</span>'
+        + '<span class="lead-card__time">'+timeAgo(lead.createdAt)+'</span>'
+        + '</div></div>';
+    }).join('');
+
+    list.querySelectorAll('.lead-card').forEach(function(el){
+      el.addEventListener('click', function(){
+        var id = this.dataset.id;
+        activeLead = allLeads.find(function(l){ return l.id===id; });
+        renderList();
+        renderDetail();
+      });
+    });
+  }
+
+  /* Filters */
+  document.getElementById('crmFilters').addEventListener('click', function(e){
+    var btn = e.target.closest('.crm__filter');
+    if (!btn) return;
+    filterStatus = btn.dataset.status;
+    document.querySelectorAll('.crm__filter').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    activeLead = null;
+    renderList();
+    document.getElementById('detailCol').innerHTML = '<div class="detail-empty"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg><span>Выберите заявку</span></div>';
+  });
+
+  /* ── Detail pane ────────────────────────────────────────── */
+  function renderDetail() {
+    if (!activeLead) return;
+    var l = activeLead;
+    var col = document.getElementById('detailCol');
+
+    col.innerHTML = '<div class="detail-card">'
+      + '<div class="detail-card__hd">'
+      + '<div><div class="detail-card__name">'+escHtml(l.name)+'</div>'
+      + '<div class="detail-card__id">'+escHtml(l.phone)+' · ID: '+escHtml(l.id)+'</div></div>'
+      + statusBadge(l.status)+'</div>'
+
+      + '<div class="detail-card__section">'
+      + '<div class="detail-card__section-title">Параметры объекта</div>'
+      + '<div class="detail-grid">'
+      + field('Тип объекта', l.objectType)
+      + field('Площадь', l.area)
+      + field('Тип ремонта', l.renovationType)
+      + field('Дизайн-проект', l.designProject)
+      + field('Сроки начала', l.timeline)
+      + field('Примерная сумма', l.estimatedAmount)
+      + field('Дата заявки', new Date(l.createdAt).toLocaleString('ru-RU'))
+      + field('Источник', l.source)
+      + (l.calendarDate ? field('Запись', l.calendarDate + ' ' + (l.calendarTime||'')) : '')
+      + '</div>'
+      + (l.comment ? '<div style="margin-top:.6rem"><span style="font-size:.75rem;color:var(--ink2)">Комментарий клиента</span><p style="font-size:.9rem;margin-top:.2rem">'+escHtml(l.comment)+'</p></div>' : '')
+      + '</div>'
+
+      + '<div class="detail-card__section">'
+      + '<div class="detail-card__section-title">Статус и работа</div>'
+      + '<div class="status-row">'
+      + '<select class="status-select" id="statusSel">'
+      + ['Новая','В работе','Не ответил','Записан на созвон','Записан на замер','Закрыта'].map(function(s){
+          return '<option value="'+s+'"'+(s===l.status?' selected':'')+'>'+s+'</option>';
+        }).join('')
+      + '</select>'
+      + '<button class="btn-save-status" id="btnSaveStatus">Сохранить</button>'
+      + '</div>'
+      + '<div style="margin-top:1rem">'
+      + '<label style="font-size:.75rem;color:var(--ink2);display:block;margin-bottom:.35rem">Комментарий менеджера</label>'
+      + '<textarea class="comment-area" id="commentArea" placeholder="Заметки, договорённости, история…">'+escHtml(l.managerComment||'')+'</textarea>'
+      + '<div class="action-btns"><button class="btn-action btn-action--fu" id="btnSaveComment">💾 Сохранить комментарий</button></div>'
+      + '</div></div>'
+
+      + '<div class="detail-card__section">'
+      + '<div class="detail-card__section-title">Действия</div>'
+      + '<div class="action-btns">'
+      + '<button class="btn-action btn-action--tg" id="btnFollowUp">📩 Фоллоу-ап менеджеру</button>'
+      + '<button class="btn-action btn-action--cal" id="btnCalendar">📅 Создать событие в календаре</button>'
+      + '</div></div>'
+
+      + '</div>';
+
+    /* Bind events */
+    document.getElementById('btnSaveStatus').addEventListener('click', function(){
+      var s = document.getElementById('statusSel').value;
+      patchLead(l.id, { status: s }, function(updated){
+        l.status = s;
+        Object.assign(activeLead, updated);
+        var idx = allLeads.findIndex(function(x){return x.id===l.id;});
+        if (idx>-1) allLeads[idx] = activeLead;
+        renderList();
+        showToast('Статус обновлён: ' + s);
+      });
+    });
+
+    document.getElementById('btnSaveComment').addEventListener('click', function(){
+      var c = document.getElementById('commentArea').value;
+      patchLead(l.id, { managerComment: c }, function(updated){
+        Object.assign(activeLead, updated);
+        var idx = allLeads.findIndex(function(x){return x.id===l.id;});
+        if (idx>-1) allLeads[idx] = activeLead;
+        showToast('Комментарий сохранён');
+      });
+    });
+
+    document.getElementById('btnFollowUp').addEventListener('click', function(){
+      sendFollowUp(l.id);
+    });
+
+    document.getElementById('btnCalendar').addEventListener('click', function(){
+      openCalModal(l.id);
+    });
+  }
+
+  function field(label, value) {
+    if (!value || value === '—') return '';
+    return '<div class="detail-row"><span class="label">'+escHtml(label)+'</span><span class="value">'+escHtml(value)+'</span></div>';
+  }
+
+  /* ── API calls ──────────────────────────────────────────── */
+  function patchLead(id, data, cb) {
+    fetch('/api/leads/' + id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': pwd },
+      body: JSON.stringify(data)
+    }).then(function(r){ return r.json(); })
+      .then(function(d){ if (cb) cb(d.lead||data); })
+      .catch(function(e){ showToast('Ошибка: ' + e.message, true); });
+  }
+
+  function sendFollowUp(id) {
+    var btn = document.getElementById('btnFollowUp');
+    if (btn) btn.disabled = true;
+    fetch('/api/follow-up', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': pwd },
+      body: JSON.stringify({ id: id })
+    }).then(function(r){ return r.json(); })
+      .then(function(d){
+        if (d.ok) showToast('Фоллоу-ап отправлен в Telegram');
+        else showToast('Ошибка отправки', true);
+      })
+      .catch(function(e){ showToast('Ошибка: ' + e.message, true); })
+      .finally(function(){ if (btn) btn.disabled = false; });
+  }
+
+  document.getElementById('btnFollowAll').addEventListener('click', function(){
+    fetch('/api/follow-up', { headers: { 'x-admin-password': pwd } })
+      .then(function(r){ return r.json(); })
+      .then(function(d){ showToast('Обработано: ' + d.processed + ' заявок'); })
+      .catch(function(e){ showToast('Ошибка: ' + e.message, true); });
+  });
+
+  /* ── Calendar modal ─────────────────────────────────────── */
+  function openCalModal(id) {
+    calLeadId = id;
+    calType = 'Записан на созвон';
+    document.getElementById('calTypeCall').classList.add('active');
+    document.getElementById('calTypeMeasure').classList.remove('active');
+    var today = new Date().toISOString().split('T')[0];
+    document.getElementById('calDate').value = today;
+    document.getElementById('calTime').value = '10:00';
+    document.getElementById('calDate').classList.remove('err');
+    document.getElementById('calTime').classList.remove('err');
+    document.getElementById('calModal').classList.add('open');
+  }
+
+  document.getElementById('calTypeCall').addEventListener('click', function(){
+    calType = 'Записан на созвон';
+    this.classList.add('active');
+    document.getElementById('calTypeMeasure').classList.remove('active');
+  });
+  document.getElementById('calTypeMeasure').addEventListener('click', function(){
+    calType = 'Записан на замер';
+    this.classList.add('active');
+    document.getElementById('calTypeCall').classList.remove('active');
+  });
+  document.getElementById('calCancel').addEventListener('click', function(){
+    document.getElementById('calModal').classList.remove('open');
+  });
+  document.getElementById('calConfirm').addEventListener('click', function(){
+    var date = document.getElementById('calDate').value;
+    var time = document.getElementById('calTime').value;
+    if (!date) { document.getElementById('calDate').classList.add('err'); return; }
+    if (!time) { document.getElementById('calTime').classList.add('err'); return; }
+
+    this.disabled = true; this.textContent = 'Создаём…';
+    var self = this;
+    fetch('/api/calendar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': pwd },
+      body: JSON.stringify({ leadId: calLeadId, date: date, time: time, type: calType })
+    }).then(function(r){ return r.json(); })
+      .then(function(d){
+        document.getElementById('calModal').classList.remove('open');
+        if (d.ok) {
+          showToast(d.mode === 'google_calendar' ? 'Событие создано в Google Calendar' : 'Дата сохранена в CRM (календарь не подключён)');
+          // Update local lead
+          var idx = allLeads.findIndex(function(l){ return l.id===calLeadId; });
+          if (idx>-1) { allLeads[idx].status = calType; allLeads[idx].calendarDate = date; allLeads[idx].calendarTime = time; }
+          if (activeLead && activeLead.id===calLeadId) { activeLead.status=calType; activeLead.calendarDate=date; activeLead.calendarTime=time; }
+          renderList(); renderDetail();
+        } else {
+          showToast('Ошибка: ' + (d.error||'неизвестно'), true);
+        }
+      })
+      .catch(function(e){ showToast('Ошибка: ' + e.message, true); })
+      .finally(function(){ self.disabled=false; self.textContent='Создать событие'; });
+  });
+
+  /* ── Toast ──────────────────────────────────────────────── */
+  function showToast(msg, isErr) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast' + (isErr?' err':'');
+    setTimeout(function(){ t.classList.add('show'); }, 10);
+    setTimeout(function(){ t.classList.remove('show'); }, 3000);
+  }
+})();
+</script>
+</body>
+</html>
