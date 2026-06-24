@@ -1,59 +1,70 @@
-// POST /api/chat — Gemini AI chat for renovation assistant
-// Falls back to scripted demo replies if GEMINI_API_KEY is not set
-
 const SYSTEM_PROMPT = `Ты ИИ-ассистент ремонтной компании Atelier Buils (Алматы).
-Твоя задача — вежливо отвечать клиентам, уточнять детали ремонта, помогать понять примерный формат работ и подводить клиента к заявке, расчёту или созвону.
+Отвечай кратко — 2-3 предложения. Пиши по-русски.
+Помогай клиентам с вопросами о ремонте, уточняй детали (площадь, тип объекта, бюджет).
+Цены: базовый от 35 000 ₸/м², комфорт от 55 000 ₸/м², премиум от 90 000 ₸/м².
 Не обещай точную стоимость без менеджера.
-Если клиент готов оставить заявку, попроси имя, телефон, площадь, тип ремонта и удобное время для связи.
-Отвечай кратко — 2-4 предложения максимум. Пиши по-русски.
-Если пишут на другом языке — отвечай на том же языке.
-Диапазон цен компании: базовый ремонт от 35 000 ₸/м², комфорт от 55 000 ₸/м², премиум от 90 000 ₸/м².
-Работаем с квартирами, домами, офисами и коммерческими помещениями.
-Гарантия 1-2 года в зависимости от пакета.`;
+Если клиент готов оставить заявку — попроси имя и телефон.`;
 
 const DEMO_REPLIES = [
   'Здравствуйте! Подскажите, какой тип объекта вас интересует — квартира, дом или офис?',
-  'Хорошо! Чтобы рассчитать примерную стоимость, уточните площадь помещения.',
-  'Наши цены: базовый ремонт от 35 000 ₸/м², комфорт от 55 000 ₸/м², премиум от 90 000 ₸/м².',
+  'Чтобы рассчитать примерную стоимость, уточните площадь помещения.',
+  'Наши цены: базовый от 35 000 ₸/м², комфорт от 55 000 ₸/м², премиум от 90 000 ₸/м².',
   'Точную стоимость подготовит менеджер после замера. Оставите контакты — свяжемся в течение часа.',
-  'Работаем по договору, делаем фото-отчёты, гарантия 1-2 года. Записаться на консультацию можно прямо сейчас.',
-  'Чтобы оставить заявку, подскажите ваше имя и номер телефона — менеджер перезвонит.',
-  'Сроки зависят от площади и объёма работ. Квартира 50-80 м² — 2-4 месяца. Уточните ваш объект?',
+  'Работаем по договору, делаем фото-отчёты, гарантия 1-2 года. Записаться можно прямо сейчас.',
+  'Чтобы оставить заявку, подскажите ваше имя и номер телефона.',
+  'Сроки: квартира 50-80 м² — 2-4 месяца. Уточните ваш объект?',
 ];
 let _demoIdx = 0;
 
-async function askGemini(history, userMessage) {
+async function askGemini(messages) {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return null;
-
-  const contents = [
-    ...history.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
-    { role: 'user', parts: [{ text: userMessage }] }
-  ];
-
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-          contents,
-          generationConfig: { maxOutputTokens: 256, temperature: 0.7 }
-        })
-      }
-    );
-    const data = await res.json();
-    if (data.error) {
-      console.error('[Gemini] API error:', data.error);
-      return null;
-    }
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
-  } catch (e) {
-    console.error('[Gemini] Network error:', e.message);
+  if (!apiKey) {
+    console.log('[Gemini] GEMINI_API_KEY not set — using demo mode');
     return null;
   }
+
+  // Build contents: system as first user message, then history
+  const contents = [
+    { role: 'user', parts: [{ text: '[ИНСТРУКЦИЯ ДЛЯ АССИСТЕНТА]: ' + SYSTEM_PROMPT }] },
+    { role: 'model', parts: [{ text: 'Понял, буду следовать инструкции.' }] },
+    ...messages
+  ];
+
+  const models = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-pro'];
+
+  for (const model of models) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents,
+            generationConfig: { maxOutputTokens: 300, temperature: 0.7 }
+          })
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.error) {
+        console.error(`[Gemini] Model ${model} error:`, JSON.stringify(data.error));
+        continue;
+      }
+
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) {
+        console.log(`[Gemini] Success with model: ${model}`);
+        return text;
+      }
+    } catch (e) {
+      console.error(`[Gemini] Model ${model} fetch error:`, e.message);
+    }
+  }
+
+  console.error('[Gemini] All models failed');
+  return null;
 }
 
 module.exports = async function handler(req, res) {
@@ -66,13 +77,17 @@ module.exports = async function handler(req, res) {
   const { message, history = [] } = req.body || {};
   if (!message) return res.status(400).json({ error: 'message required' });
 
-  const aiReply = await askGemini(history, message);
+  const messages = [
+    ...history.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
+    { role: 'user', parts: [{ text: message }] }
+  ];
+
+  const aiReply = await askGemini(messages);
 
   if (aiReply) {
     return res.status(200).json({ reply: aiReply, mode: 'gemini' });
   }
 
-  // Demo fallback
   const reply = DEMO_REPLIES[_demoIdx % DEMO_REPLIES.length];
   _demoIdx++;
   return res.status(200).json({ reply, mode: 'demo' });
