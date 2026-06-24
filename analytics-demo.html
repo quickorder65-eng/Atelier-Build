@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Аналитика — Atelier Buils</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#F3F0EA;--bg2:#ECEAE3;--white:#FFFFFF;--ink:#141414;--ink2:#5F5F5A;--line:#D8D0C4;--dark:#1C1C1A;--acc:#9A7A45;--fh:'Inter Tight','Inter',Arial,sans-serif;--fb:'Inter',Arial,sans-serif}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--ink);font-family:var(--fb);font-size:.95rem;line-height:1.6;-webkit-font-smoothing:antialiased}
+    button{cursor:pointer;font:inherit;border:none;background:none}a{color:inherit;text-decoration:none}
+
+    .hdr{background:var(--dark);color:#fff;padding:.9rem 1.5rem;display:flex;align-items:center;gap:1rem;position:sticky;top:0;z-index:10}
+    .hdr__logo{font-family:var(--fh);font-weight:800;font-size:1.1rem}
+    .hdr__logo b{background:var(--acc);color:#fff;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;font-size:.75rem;margin-right:.35rem}
+    .hdr__links{margin-left:auto;display:flex;gap:.8rem;align-items:center}
+    .hdr__link{color:rgba(255,255,255,.6);font-size:.85rem;transition:color .2s}.hdr__link:hover{color:#fff}
+
+    .main{max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem}
+    .page-title{font-family:var(--fh);font-size:1.8rem;font-weight:800;margin-bottom:.3rem}
+    .page-sub{color:var(--ink2);font-size:.9rem;margin-bottom:2.5rem}
+    .demo-note{background:#FEF3C7;border:1px solid #F9D066;border-radius:10px;padding:.8rem 1.1rem;font-size:.82rem;color:#92400E;margin-bottom:2rem}
+
+    /* KPI grid */
+    .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:2rem}
+    .kpi{background:var(--white);border:1px solid var(--line);border-radius:12px;padding:1.2rem 1.4rem}
+    .kpi__value{font-family:var(--fh);font-size:2rem;font-weight:800;line-height:1}
+    .kpi__label{font-size:.78rem;color:var(--ink2);margin-top:.3rem}
+    .kpi__delta{font-size:.78rem;font-weight:600;margin-top:.2rem}
+    .kpi__delta.up{color:#065F46}.kpi__delta.dn{color:#991B1B}
+
+    /* Charts */
+    .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:2rem}
+    .chart-card{background:var(--white);border:1px solid var(--line);border-radius:12px;padding:1.3rem}
+    .chart-card__title{font-family:var(--fh);font-weight:700;font-size:.88rem;margin-bottom:1rem;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em}
+
+    /* Bar chart */
+    .bar-chart{display:flex;flex-direction:column;gap:.55rem}
+    .bar-row{display:flex;align-items:center;gap:.7rem}
+    .bar-label{font-size:.8rem;min-width:120px;color:var(--ink2);text-align:right}
+    .bar-track{flex:1;background:var(--bg2);border-radius:4px;height:20px;overflow:hidden}
+    .bar-fill{height:100%;border-radius:4px;background:var(--ink);transition:width .6s}
+    .bar-fill.acc{background:var(--acc)}
+    .bar-fill.green{background:#065F46}
+    .bar-fill.blue{background:#1E40AF}
+    .bar-val{font-size:.78rem;font-weight:600;min-width:28px}
+
+    /* Status donut simulation */
+    .status-list{display:flex;flex-direction:column;gap:.6rem}
+    .status-item{display:flex;align-items:center;gap:.7rem}
+    .status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+    .status-name{font-size:.85rem;flex:1}
+    .status-count{font-weight:700;font-size:.85rem}
+    .status-pct{font-size:.75rem;color:var(--ink2)}
+
+    /* Events table */
+    .events-card{background:var(--white);border:1px solid var(--line);border-radius:12px;padding:1.3rem;margin-bottom:2rem;overflow-x:auto}
+    .events-card__title{font-family:var(--fh);font-weight:700;font-size:.88rem;margin-bottom:1rem;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em}
+    table{width:100%;border-collapse:collapse;font-size:.85rem}
+    th{text-align:left;padding:.5rem .8rem;font-size:.75rem;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--bg2)}
+    td{padding:.6rem .8rem;border-bottom:1px solid var(--bg2);vertical-align:middle}
+    tr:last-child td{border-bottom:none}
+    .ev-check{display:inline-block;width:8px;height:8px;border-radius:50%;background:#D1FAE5;border:2px solid #065F46;margin-right:.4rem}
+    .ev-miss{display:inline-block;width:8px;height:8px;border-radius:50%;background:#FEE2E2;border:2px solid #991B1B;margin-right:.4rem}
+
+    /* Recommendations */
+    .reco-card{background:var(--dark);color:#fff;border-radius:12px;padding:1.6rem;margin-bottom:2rem}
+    .reco-card__title{font-family:var(--fh);font-weight:800;font-size:1rem;margin-bottom:1rem;opacity:.8}
+    .reco-list{display:flex;flex-direction:column;gap:.7rem}
+    .reco-item{display:flex;gap:.6rem;align-items:flex-start;font-size:.88rem;opacity:.9}
+    .reco-icon{font-size:.9rem;flex-shrink:0;margin-top:.05rem}
+
+    /* Setup instructions */
+    .setup-card{background:var(--white);border:1px solid var(--line);border-radius:12px;padding:1.6rem;margin-bottom:1.5rem}
+    .setup-card__title{font-family:var(--fh);font-weight:800;font-size:1rem;margin-bottom:.8rem}
+    .setup-card__step{display:flex;gap:.7rem;margin-bottom:.6rem;font-size:.88rem}
+    .setup-card__num{background:var(--ink);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;margin-top:.05rem}
+    code{background:var(--bg2);border-radius:4px;padding:.1rem .35rem;font-size:.82rem;font-family:monospace}
+
+    @media(max-width:640px){.charts-row{grid-template-columns:1fr}.bar-label{min-width:80px}}
+  </style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr__logo"><b>AB</b> Analytics</div>
+  <div class="hdr__links">
+    <a href="/crm" class="hdr__link">CRM</a>
+    <a href="/admin/prices" class="hdr__link">Цены</a>
+    <a href="/" class="hdr__link">Сайт →</a>
+  </div>
+</div>
+
+<div class="main">
+  <h1 class="page-title">Ежемесячный отчёт</h1>
+  <p class="page-sub">Демонстрационные данные · Июнь 2026 · <span id="modeLabel">Подключите GA / Яндекс Метрику для реальных данных</span></p>
+
+  <div class="demo-note">
+    ℹ️ <b>Demo режим.</b> Данные ниже — демонстрация структуры отчёта.
+    Для реальной аналитики заполните <code>NEXT_PUBLIC_GA_ID</code> и <code>NEXT_PUBLIC_YM_ID</code> в Vercel.
+    Все события уже отслеживаются через <code>window.AB.track()</code> в script.js.
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi__value" id="kpiVisits">—</div>
+      <div class="kpi__label">Посетителей за месяц</div>
+      <div class="kpi__delta up" id="kpiVisitsDelta">↑ +12% к пр. месяцу</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi__value" id="kpiLeads">—</div>
+      <div class="kpi__label">Заявок из CRM</div>
+      <div class="kpi__delta up" id="kpiLeadsDelta">↑ +3 к пр. месяцу</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi__value" id="kpiConv">—</div>
+      <div class="kpi__label">Конверсия в заявку</div>
+      <div class="kpi__delta" id="kpiConvDelta" style="color:var(--ink2)">ср. по отрасли 2–4%</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi__value" id="kpiWA">—</div>
+      <div class="kpi__label">Кликов WhatsApp</div>
+      <div class="kpi__delta up" id="kpiWADelta">↑ +8 к пр. месяцу</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi__value" id="kpiChat">—</div>
+      <div class="kpi__label">Сообщений в чате</div>
+      <div class="kpi__delta" style="color:var(--ink2)">через Gemini AI</div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts-row">
+
+    <div class="chart-card">
+      <div class="chart-card__title">Заявки по типу объекта</div>
+      <div class="bar-chart" id="barObjects"></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-card__title">Заявки по типу ремонта</div>
+      <div class="bar-chart" id="barTypes"></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-card__title">Заявки по статусу</div>
+      <div class="status-list" id="statusList"></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-card__title">Источники заявок (demo)</div>
+      <div class="bar-chart">
+        <div class="bar-row"><span class="bar-label">Квиз/форма</span><div class="bar-track"><div class="bar-fill" style="width:65%"></div></div><span class="bar-val">65%</span></div>
+        <div class="bar-row"><span class="bar-label">ИИ-чат</span><div class="bar-track"><div class="bar-fill acc" style="width:20%"></div></div><span class="bar-val">20%</span></div>
+        <div class="bar-row"><span class="bar-label">WhatsApp</span><div class="bar-track"><div class="bar-fill green" style="width:10%"></div></div><span class="bar-val">10%</span></div>
+        <div class="bar-row"><span class="bar-label">Прямой звонок</span><div class="bar-track"><div class="bar-fill blue" style="width:5%"></div></div><span class="bar-val">5%</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Events tracking -->
+  <div class="events-card">
+    <div class="events-card__title">Отслеживаемые события (script.js)</div>
+    <table>
+      <thead><tr><th>Событие</th><th>Описание</th><th>Трекинг</th></tr></thead>
+      <tbody>
+        <tr><td><code>page_view</code></td><td>Открытие сайта</td><td><span class="ev-check"></span>Активен</td></tr>
+        <tr><td><code>whatsapp_click</code></td><td>Клик по WhatsApp</td><td><span class="ev-check"></span>Активен</td></tr>
+        <tr><td><code>phone_click</code></td><td>Клик по номеру</td><td><span class="ev-check"></span>Активен</td></tr>
+        <tr><td><code>chat_open</code></td><td>Открытие ИИ-чата</td><td><span class="ev-check"></span>Активен</td></tr>
+        <tr><td><code>chat_message_sent</code></td><td>Отправка сообщения в чате</td><td><span class="ev-check"></span>Активен</td></tr>
+        <tr><td><code>calculator_open</code></td><td>Загрузка секции расчёта</td><td><span class="ev-check"></span>Активен</td></tr>
+        <tr><td><code>quiz_step_contact</code></td><td>Дошёл до шага с контактами</td><td><span class="ev-check"></span>Активен</td></tr>
+        <tr><td><code>quiz_submit</code></td><td>Отправка квиза</td><td><span class="ev-check"></span>Активен</td></tr>
+        <tr><td><code>crm_lead_created</code></td><td>Заявка сохранена в CRM</td><td><span class="ev-check"></span>Активен</td></tr>
+        <tr><td><code>GA_ID / YM_ID</code></td><td>Передача в GA4 / Яндекс.Метрику</td><td><span class="ev-miss"></span>Нужны env vars</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Recommendations -->
+  <div class="reco-card">
+    <div class="reco-card__title">💡 Рекомендации по улучшению</div>
+    <div class="reco-list">
+      <div class="reco-item"><span class="reco-icon">📈</span><span>Подключите Google Analytics 4: установите <code>NEXT_PUBLIC_GA_ID</code> в Vercel для отслеживания реальных посещений и воронки.</span></div>
+      <div class="reco-item"><span class="reco-icon">📊</span><span>Яндекс Метрика даст визит-тепловую карту и запись сессий — особенно полезно для оптимизации квиза.</span></div>
+      <div class="reco-item"><span class="reco-icon">🤖</span><span>Заполните <code>GEMINI_API_KEY</code> — чат перейдёт с демо-ответов на реальный ИИ-ассистент и будет лучше конвертировать посетителей.</span></div>
+      <div class="reco-item"><span class="reco-icon">📱</span><span>Telegram-бот уже подготовлен. Зарегистрируйте webhook (инструкция в <code>api/telegram-webhook.js</code>) для демонстрации AI-ассистента клиентам.</span></div>
+      <div class="reco-item"><span class="reco-icon">📅</span><span>Google Calendar — подключите OAuth credentials, чтобы менеджер видел записи на замер прямо в Google Calendar.</span></div>
+      <div class="reco-item"><span class="reco-icon">💾</span><span>Переключите <code>CRM_STORAGE_MODE=google_sheets</code> и добавьте Apps Script URL, чтобы заявки не терялись при перезапуске Vercel.</span></div>
+      <div class="reco-item"><span class="reco-icon">📣</span><span>WhatsApp-автоматизация может быть подключена следующим этапом. Сейчас фоллоу-апы и ИИ-ассистент демонстрируются через Telegram.</span></div>
+    </div>
+  </div>
+
+  <!-- Setup Guide -->
+  <div class="setup-card">
+    <div class="setup-card__title">Как подключить Google Sheets CRM</div>
+    <div class="setup-card__step"><span class="setup-card__num">1</span><span>Создайте Google Sheet. В меню: Расширения → Apps Script.</span></div>
+    <div class="setup-card__step"><span class="setup-card__num">2</span><span>Вставьте содержимое файла <code>gas_crm.gs</code> (см. инструкцию ниже). Нажмите «Развернуть» → «Новое развёртывание» → «Веб-приложение» → «Доступ: все».</span></div>
+    <div class="setup-card__step"><span class="setup-card__num">3</span><span>Скопируйте URL веб-приложения и вставьте в <code>GOOGLE_SHEETS_WEBHOOK_URL</code>.</span></div>
+    <div class="setup-card__step"><span class="setup-card__num">4</span><span>Установите <code>CRM_STORAGE_MODE=google_sheets</code> в Vercel → Settings → Environment Variables.</span></div>
+    <div class="setup-card__step"><span class="setup-card__num">5</span><span>Переразверните сайт на Vercel — заявки будут сохраняться в Google Sheets постоянно.</span></div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  // Try to load real lead data from CRM for stats
+  // (requires admin password — so we'll use demo data here)
+  var DEMO = {
+    visits: 847,
+    leads: 14,
+    waClicks: 38,
+    chatMsgs: 62,
+    leadsByObject: [
+      { label: 'Квартира', v: 8 },
+      { label: 'Дом / коттедж', v: 3 },
+      { label: 'Офис', v: 2 },
+      { label: 'Коммерческое', v: 1 }
+    ],
+    leadsByType: [
+      { label: 'Комфорт', v: 6 },
+      { label: 'Базовый', v: 4 },
+      { label: 'Премиум', v: 3 },
+      { label: 'Консультация', v: 1 }
+    ],
+    leadsByStatus: [
+      { label: 'Новая',             count: 3, color: '#92400E', bg: '#FEF3C7' },
+      { label: 'В работе',          count: 4, color: '#065F46', bg: '#D1FAE5' },
+      { label: 'Не ответил',        count: 2, color: '#991B1B', bg: '#FEE2E2' },
+      { label: 'Записан на созвон', count: 2, color: '#1E40AF', bg: '#DBEAFE' },
+      { label: 'Записан на замер',  count: 2, color: '#5B21B6', bg: '#EDE9FE' },
+      { label: 'Закрыта',           count: 1, color: '#6B7280', bg: '#F3F4F6' }
+    ]
+  };
+
+  var conv = ((DEMO.leads / DEMO.visits) * 100).toFixed(1);
+  document.getElementById('kpiVisits').textContent = DEMO.visits.toLocaleString('ru-RU');
+  document.getElementById('kpiLeads').textContent  = DEMO.leads;
+  document.getElementById('kpiConv').textContent   = conv + '%';
+  document.getElementById('kpiWA').textContent     = DEMO.waClicks;
+  document.getElementById('kpiChat').textContent   = DEMO.chatMsgs;
+
+  // Bar charts
+  function renderBar(containerId, items, className) {
+    var max = Math.max.apply(null, items.map(function(i){return i.v;}));
+    var html = items.map(function(item){
+      var pct = Math.round((item.v/max)*100);
+      return '<div class="bar-row">'
+        + '<span class="bar-label">'+item.label+'</span>'
+        + '<div class="bar-track"><div class="bar-fill'+(className?' '+className:'')+'" style="width:'+pct+'%"></div></div>'
+        + '<span class="bar-val">'+item.v+'</span></div>';
+    }).join('');
+    document.getElementById(containerId).innerHTML = html;
+  }
+  renderBar('barObjects', DEMO.leadsByObject);
+  renderBar('barTypes',   DEMO.leadsByType, 'acc');
+
+  // Status list
+  var total = DEMO.leadsByStatus.reduce(function(s,i){return s+i.count;},0);
+  document.getElementById('statusList').innerHTML = DEMO.leadsByStatus.map(function(s){
+    var pct = Math.round((s.count/total)*100);
+    return '<div class="status-item">'
+      +'<span class="status-dot" style="background:'+s.color+'"></span>'
+      +'<span class="status-name">'+s.label+'</span>'
+      +'<span class="status-count">'+s.count+'</span>'
+      +'<span class="status-pct">'+pct+'%</span>'
+      +'</div>';
+  }).join('');
+})();
+</script>
+</body>
+</html>
