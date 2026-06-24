@@ -1,9 +1,0 @@
-{
-  "rewrites": [
-    { "source": "/crm",             "destination": "/crm.html" },
-    { "source": "/admin/crm",       "destination": "/crm.html" },
-    { "source": "/admin/prices",    "destination": "/admin-prices.html" },
-    { "source": "/admin-prices",    "destination": "/admin-prices.html" },
-    { "source": "/analytics-demo",  "destination": "/analytics-demo.html" }
-  ]
-}
