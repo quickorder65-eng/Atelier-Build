@@ -389,13 +389,16 @@
 
       if (collectedData.name && collectedData.phone && !collectedData.leadSent) {
         collectedData.leadSent = true;
+        var historyText = chatHistory.map(function(m){
+          return (m.role === 'user' ? 'Клиент' : 'Бот') + ': ' + m.text;
+        }).join('\n');
         fetch('/api/leads', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name: collectedData.name,
             phone: collectedData.phone,
-            comment: 'Заявка из ИИ-чата. История: ' + chatHistory.slice(-4).map(function(m){ return m.role + ': ' + m.text; }).join(' | '),
+            comment: 'Заявка из ИИ-чата:\n' + historyText,
             source: 'Чат'
           })
         }).catch(function(){});
