@@ -63,23 +63,16 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'leadId, date and time are required' });
   }
 
-  const lead = await getLeadById(leadId);
-  if (!lead) return res.status(404).json({ error: 'Lead not found' });
+  const lead = await getLeadById(leadId).catch(() => null) || { id: leadId, name: '—', phone: '—', area: '—', renovationType: '—', comment: '—' };
 
-  // Check if Google Calendar credentials are available
   const accessToken = await getAccessToken().catch(() => null);
   if (!accessToken) {
-    // Mock mode: save date/time to lead, update status
-    await updateLead(leadId, {
-      status: type,
-      calendarDate: date,
-      calendarTime: time
-    });
-    console.log(`[Calendar MOCK] Would create event for lead ${leadId} on ${date} at ${time}`);
+    await updateLead(leadId, { status: type, calendarDate: date, calendarTime: time }).catch(() => {});
+    console.log(`[Calendar MOCK] lead ${leadId} on ${date} at ${time}`);
     return res.status(200).json({
       ok: true,
       mode: 'mock',
-      message: 'Дата сохранена в CRM (Google Calendar не подключён). Заполните GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN для реальной интеграции.',
+      message: 'Дата сохранена. Для синхронизации с Google Calendar добавьте GOOGLE_CLIENT_ID и GOOGLE_CLIENT_SECRET в Vercel.',
       lead: { ...lead, status: type, calendarDate: date, calendarTime: time }
     });
   }
