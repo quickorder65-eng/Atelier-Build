@@ -16,54 +16,49 @@ const DEMO_REPLIES = [
 ];
 let _demoIdx = 0;
 
-async function askGemini(messages) {
-  const apiKey = process.env.GEMINI_API_KEY;
+async function askGroq(messages) {
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    console.log('[Gemini] GEMINI_API_KEY not set — using demo mode');
+    console.log('[Groq] GROQ_API_KEY not set — using demo mode');
     return null;
   }
 
-  // Build contents: system as first user message, then history
-  const contents = [
-    { role: 'user', parts: [{ text: '[ИНСТРУКЦИЯ ДЛЯ АССИСТЕНТА]: ' + SYSTEM_PROMPT }] },
-    { role: 'model', parts: [{ text: 'Понял, буду следовать инструкции.' }] },
-    ...messages
-  ];
+  const body = {
+    model: 'llama-3.1-8b-instant',
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      ...messages.map(m => ({ role: m.role === 'model' ? 'assistant' : m.role, content: m.parts?.[0]?.text || m.text || '' }))
+    ],
+    max_tokens: 300,
+    temperature: 0.7
+  };
 
-const models = ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify(body)
+    });
 
-  for (const model of models) {
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents,
-            generationConfig: { maxOutputTokens: 300, temperature: 0.7 }
-          })
-        }
-      );
+    const data = await res.json();
 
-      const data = await res.json();
-
-      if (data.error) {
-        console.error(`[Gemini] Model ${model} error:`, JSON.stringify(data.error));
-        continue;
-      }
-
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) {
-        console.log(`[Gemini] Success with model: ${model}`);
-        return text;
-      }
-    } catch (e) {
-      console.error(`[Gemini] Model ${model} fetch error:`, e.message);
+    if (data.error) {
+      console.error('[Groq] error:', JSON.stringify(data.error));
+      return null;
     }
+
+    const text = data.choices?.[0]?.message?.content;
+    if (text) {
+      console.log('[Groq] Success');
+      return text;
+    }
+  } catch (e) {
+    console.error('[Groq] fetch error:', e.message);
   }
 
-  console.error('[Gemini] All models failed');
   return null;
 }
 
@@ -82,10 +77,10 @@ module.exports = async function handler(req, res) {
     { role: 'user', parts: [{ text: message }] }
   ];
 
-  const aiReply = await askGemini(messages);
+  const aiReply = await askGroq(messages);
 
   if (aiReply) {
-    return res.status(200).json({ reply: aiReply, mode: 'gemini' });
+    return res.status(200).json({ reply: aiReply, mode: 'groq' });
   }
 
   const reply = DEMO_REPLIES[_demoIdx % DEMO_REPLIES.length];
