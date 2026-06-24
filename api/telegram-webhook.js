@@ -14,7 +14,7 @@ async function askGemini(userText) {
     { role: 'user', parts: [{ text: userText }] }
   ];
 
-  const models = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-pro'];
+  const models = ['gemini-2.0-flash', 'gemini-2.0-flash-exp', 'gemini-1.5-flash-001', 'gemini-1.5-pro-001'];
 
   for (const model of models) {
     try {
