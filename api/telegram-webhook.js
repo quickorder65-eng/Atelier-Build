@@ -1,39 +1,39 @@
-async function askGemini(userText) {
-  const apiKey = process.env.GEMINI_API_KEY;
+async function askGroq(userText) {
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    console.log('[TG Webhook] GEMINI_API_KEY not set');
+    console.log('[TG Webhook] GROQ_API_KEY not set');
     return null;
   }
 
-  const contents = [
-    {
-      role: 'user',
-      parts: [{ text: '[ИНСТРУКЦИЯ]: Ты ИИ-ассистент ремонтной компании Atelier Buils (Алматы). Отвечай кратко — 2-3 предложения. Цены: базовый от 35 000 ₸/м², комфорт от 55 000 ₸/м², премиум от 90 000 ₸/м². Предлагай оставить заявку или позвонить +7 700 123-45-67.' }]
-    },
-    { role: 'model', parts: [{ text: 'Понял.' }] },
-    { role: 'user', parts: [{ text: userText }] }
-  ];
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages: [
+          {
+            role: 'system',
+            content: 'Ты ИИ-ассистент ремонтной компании Atelier Buils (Алматы). Отвечай кратко — 2-3 предложения. Цены: базовый от 35 000 ₸/м², комфорт от 55 000 ₸/м², премиум от 90 000 ₸/м². Предлагай оставить заявку или позвонить +7 700 123-45-67.'
+          },
+          { role: 'user', content: userText }
+        ],
+        max_tokens: 300,
+        temperature: 0.7
+      })
+    });
 
-const models = ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash'];
-
-  for (const model of models) {
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents, generationConfig: { maxOutputTokens: 300, temperature: 0.7 } })
-        }
-      );
-      const data = await res.json();
-      if (data.error) { console.error('[TG Gemini]', model, data.error.message); continue; }
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) return text;
-    } catch (e) {
-      console.error('[TG Gemini] fetch error:', e.message);
-    }
+    const data = await res.json();
+    if (data.error) { console.error('[TG Groq]', data.error.message); return null; }
+    const text = data.choices?.[0]?.message?.content;
+    if (text) { console.log('[TG Groq] Success'); return text; }
+  } catch (e) {
+    console.error('[TG Groq] fetch error:', e.message);
   }
+
   return null;
 }
 
@@ -60,7 +60,7 @@ module.exports = async function handler(req, res) {
 
   console.log('[TG Webhook] message from', chatId, ':', userText);
 
-  const aiReply = await askGemini(userText);
+  const aiReply = await askGroq(userText);
   const reply = aiReply || 'Здравствуйте! Напишите нам в WhatsApp или позвоните: +7 700 123-45-67. Мы поможем с вопросами о ремонте.';
 
   await telegramReply(chatId, reply);
